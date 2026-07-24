@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ESW Page Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#9889;</text></svg>">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a0a0a;
+      --bg-elevated: #111111;
+      --surface: #161616;
+      --surface-2: #1c1c1c;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.14);
+      --border-strong: rgba(255,255,255,0.22);
+      --fg: #fafafa;
+      --fg-muted: #a1a1aa;
+      --fg-subtle: #71717a;
+      --brand: #a78bfa;
+      --brand-2: #60a5fa;
+      --brand-3: #f472b6;
+      --ok: #34d399;
+      --ok-bg: rgba(52, 211, 153, 0.08);
+      --ok-border: rgba(52, 211, 153, 0.24);
+      --err: #f87171;
+      --err-bg: rgba(248, 113, 113, 0.08);
+      --err-border: rgba(248, 113, 113, 0.28);
+      --info: #60a5fa;
+      --info-bg: rgba(96, 165, 250, 0.08);
+      --info-border: rgba(96, 165, 250, 0.24);
+      --radius-xl: 16px;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    ::selection { background: rgba(167, 139, 250, 0.30); color: #fff; }
+
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: var(--font-sans);
+      color: var(--fg);
+      background: var(--bg);
+      font-size: 14px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Subtle animated grid background */
+    .bg-grid {
+      position: fixed; inset: 0; z-index: -2; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, #000 20%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, #000 20%, transparent 80%);
+    }
+    .bg-glow {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+    }
+    .bg-glow::before, .bg-glow::after {
+      content: ""; position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.35;
+    }
+    .bg-glow::before { top: -180px; right: -100px; width: 500px; height: 500px; background: #6d5cff; }
+    .bg-glow::after  { top: -80px; left: -120px; width: 460px; height: 460px; background: #ff5cd6; opacity: 0.20; }
+
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Top nav bar */
+    .topnav {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+      backdrop-filter: blur(12px) saturate(180%); -webkit-backdrop-filter: blur(12px) saturate(180%);
+      background: rgba(10,10,10,0.65);
+      border-bottom: 1px solid var(--border);
+    }
+    .topnav-brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 14px; letter-spacing: -0.01em;
+    }
+    .logo {
+      width: 26px; height: 26px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 50%, var(--brand-3) 100%);
+      display: grid; place-items: center; box-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+      position: relative;
+    }
+    .logo svg { width: 14px; height: 14px; color: #0a0a0a; }
+    .topnav-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      display: inline-grid; place-items: center; width: 32px; height: 32px;
+      background: transparent; color: var(--fg-muted); border: 1px solid var(--border);
+      border-radius: var(--radius-md); cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .icon-btn:hover { color: var(--fg); border-color: var(--border-hover); background: var(--surface); }
+    .icon-btn svg { width: 15px; height: 15px; }
+
+    .wrap { max-width: 920px; width: 100%; margin: 0 auto; padding: 56px 24px 100px; flex: 1; }
+
+    /* Hero */
+    header { text-align: center; margin-bottom: 40px; }
+    .kicker {
+      display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 8px;
+      border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+      font-size: 12px; color: var(--fg-muted); font-weight: 500; margin-bottom: 24px;
+      animation: fadeUp 0.5s ease-out both;
+    }
+    .kicker .pulse-wrap { position: relative; width: 8px; height: 8px; }
+    .kicker .pulse {
+      position: absolute; inset: 0; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 8px var(--ok);
+    }
+    .kicker .pulse::before {
+      content: ""; position: absolute; inset: -4px; border-radius: 50%;
+      background: var(--ok); opacity: 0.5; animation: ping 2s cubic-bezier(0,0,0.2,1) infinite;
+    }
+    @keyframes ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
+
+    h1 {
+      margin: 0 0 14px; font-size: 44px; line-height: 1.05; font-weight: 700; letter-spacing: -0.035em;
+      background: linear-gradient(180deg, #fff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      animation: fadeUp 0.5s ease-out 0.05s both;
+    }
+    h1 .accent {
+      background: linear-gradient(135deg, var(--brand-3) 0%, var(--brand) 60%, var(--brand-2) 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    header p {
+      margin: 0 auto; max-width: 540px; color: var(--fg-muted); font-size: 16px; line-height: 1.55;
+      animation: fadeUp 0.5s ease-out 0.1s both;
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Main card with animated border glow */
+    .card-outer {
+      position: relative; border-radius: var(--radius-xl); padding: 1px;
+      background: linear-gradient(135deg, rgba(167,139,250,0.35), rgba(96,165,250,0.2) 50%, rgba(255,255,255,0.05) 100%);
+      animation: fadeUp 0.5s ease-out 0.15s both;
+    }
+    .card-outer::before {
+      content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+      background: conic-gradient(from var(--angle, 0deg), transparent 60%, rgba(167,139,250,0.6), rgba(96,165,250,0.6), transparent 100%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .card-outer:focus-within::before { opacity: 1; animation: spin-border 4s linear infinite; }
+    @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+    @keyframes spin-border { to { --angle: 360deg; } }
+
+    .card {
+      background: var(--bg-elevated); border-radius: calc(var(--radius-xl) - 1px);
+      padding: 28px;
+      box-shadow: 0 30px 80px -30px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.02) inset;
+    }
+
+    /* Field */
+    .field-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+    }
+    .field-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-weight: 600; font-size: 13px; color: var(--fg);
+    }
+    .field-label .num {
+      display: inline-grid; place-items: center; width: 20px; height: 20px;
+      border-radius: 6px; background: var(--surface-2); color: var(--fg-muted);
+      font-size: 11px; font-weight: 700; font-family: var(--font-mono);
+    }
+    .field-actions { display: flex; gap: 6px; align-items: center; }
+
+    /* Kind selector — segmented control */
+    .kind-select {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 12px; margin-bottom: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+    .kind-select-label {
+      font-size: 12px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .segmented {
+      display: inline-flex; padding: 3px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    .segmented input { position: absolute; opacity: 0; pointer-events: none; }
+    .segmented label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; font-size: 12.5px; font-weight: 600;
+      color: var(--fg-muted); cursor: pointer;
+      border-radius: 5px; transition: all 0.15s ease;
+      user-select: none;
+    }
+    .segmented label:hover { color: var(--fg); }
+    .segmented input:checked + label {
+      background: var(--surface-2); color: var(--fg);
+      box-shadow: 0 0 0 1px var(--border-hover), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .segmented input:focus-visible + label { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .segmented label .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--fg-subtle);
+      transition: background 0.15s;
+    }
+    .segmented input:checked + label[data-kind="esw"] .dot { background: var(--brand-2); box-shadow: 0 0 6px var(--brand-2); }
+    .segmented input:checked + label[data-kind="miaw"] .dot { background: var(--brand-3); box-shadow: 0 0 6px var(--brand-3); }
+    .kind-hint { flex: 1; font-size: 12px; color: var(--fg-subtle); text-align: right; }
+    .kind-hint code {
+      background: var(--surface-2); border: 1px solid var(--border);
+      padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
+      color: var(--fg-muted);
+    }
+
+    .ghost-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: transparent; border: 1px solid var(--border); color: var(--fg-muted);
+      padding: 5px 10px; font-size: 12px; font-weight: 500; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s ease; font-family: inherit;
+    }
+    .ghost-btn:hover { color: var(--fg); border-color: var(--border-hover); background: var(--surface); }
+    .ghost-btn svg { width: 12px; height: 12px; }
+
+    .ta-wrap {
+      position: relative; border: 1px solid var(--border); border-radius: var(--radius-lg);
+      background: var(--surface); transition: all 0.2s ease; overflow: hidden;
+    }
+    .ta-wrap::before {
+      content: ""; position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    }
+    .ta-wrap:focus-within {
+      border-color: rgba(167,139,250,0.55); background: var(--surface-2);
+      box-shadow: 0 0 0 4px rgba(167,139,250,0.10);
+    }
+    textarea {
+      width: 100%; min-height: 300px; padding: 16px 18px; border: 0; outline: 0;
+      background: transparent; color: var(--fg); resize: vertical;
+      font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
+      caret-color: var(--brand);
+    }
+    textarea::placeholder { color: var(--fg-subtle); }
+
+    /* Footer of card */
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between; margin-top: 20px; gap: 12px; flex-wrap: wrap;
+    }
+    .footer-left { display: flex; align-items: center; gap: 8px; color: var(--fg-subtle); font-size: 12px; }
+    kbd {
+      display: inline-block; padding: 2px 6px; min-width: 20px; text-align: center;
+      font-size: 10.5px; font-family: var(--font-mono); font-weight: 600;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-bottom-width: 2px; border-radius: 4px; color: var(--fg-muted);
+    }
+
+    /* Primary CTA — violet→indigo gradient with shine on hover */
+    .cta {
+      position: relative; overflow: hidden;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 20px; font-family: inherit; font-size: 14px; font-weight: 600;
+      color: #fff; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 55%, #2563eb 100%);
+      border: 0; border-radius: var(--radius-md); cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      box-shadow: 0 6px 20px rgba(124,58,237,0.35), 0 2px 6px rgba(37,99,235,0.25),
+                  inset 0 1px 0 rgba(255,255,255,0.25);
+      text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    }
+    .cta::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+      transform: translateX(-100%); transition: transform 0.6s ease;
+      mix-blend-mode: overlay;
+    }
+    .cta:hover:not(:disabled)::before { transform: translateX(100%); }
+    .cta:hover:not(:disabled) {
+      transform: translateY(-1px); filter: brightness(1.05);
+      box-shadow: 0 10px 28px rgba(124,58,237,0.45), 0 4px 10px rgba(37,99,235,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.30);
+    }
+    .cta:active:not(:disabled) { transform: translateY(0); filter: brightness(0.97); }
+    .cta:disabled { opacity: 0.55; cursor: wait; }
+    .cta svg { width: 14px; height: 14px; transition: transform 0.2s; }
+    .cta:hover:not(:disabled) svg { transform: translateX(2px); }
+
+    /* Status card */
+    #status { margin-top: 20px; }
+    .status {
+      padding: 16px 18px; border-radius: var(--radius-lg); font-size: 13px;
+      border: 1px solid; animation: fadeUp 0.3s ease-out;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .status.info { background: var(--info-bg); border-color: var(--info-border); }
+    .status.ok   { background: var(--ok-bg); border-color: var(--ok-border); }
+    .status.err  { background: var(--err-bg); border-color: var(--err-border); }
+    .status-icon {
+      flex-shrink: 0; display: grid; place-items: center;
+      width: 28px; height: 28px; border-radius: 8px;
+    }
+    .status.info .status-icon { background: rgba(96,165,250,0.15); color: var(--info); }
+    .status.ok .status-icon   { background: rgba(52,211,153,0.15); color: var(--ok); }
+    .status.err .status-icon  { background: rgba(248,113,113,0.15); color: var(--err); }
+    .status-icon svg { width: 15px; height: 15px; }
+    .status-body { flex: 1; min-width: 0; }
+    .status-title { font-weight: 700; font-size: 14px; color: var(--fg); margin-bottom: 3px; }
+    .status .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .status code {
+      background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px;
+      font-family: var(--font-mono); font-size: 11.5px;
+    }
+
+    /* Live URL box */
+    .live-url {
+      display: flex; align-items: center; gap: 10px; margin-top: 14px;
+      padding: 10px 8px 10px 14px; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    .live-url a {
+      flex: 1; color: var(--brand-2); font-weight: 500; text-decoration: none;
+      word-break: break-all; font-family: var(--font-mono); font-size: 12px;
+      transition: color 0.15s;
+    }
+    .live-url a:hover { color: var(--brand); }
+    .copy-btn {
+      flex-shrink: 0; background: var(--surface-2); color: var(--fg-muted);
+      border: 1px solid var(--border); padding: 6px 12px; font-size: 12px; font-weight: 600;
+      border-radius: 6px; cursor: pointer; transition: all 0.15s; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .copy-btn:hover { color: var(--fg); border-color: var(--border-hover); background: var(--surface); }
+    .copy-btn.copied { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok); }
+    .copy-btn svg { width: 12px; height: 12px; }
+
+    .quick-links { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .quick-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--fg); font-size: 12.5px; font-weight: 500; text-decoration: none;
+      padding: 6px 12px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .quick-link:hover { color: var(--brand); border-color: var(--border-hover); background: var(--surface-2); }
+    .quick-link svg { width: 14px; height: 14px; opacity: 0.85; }
+    /* GitHub-style green CTA for the "View file on GitHub" link */
+    .quick-link.gh { color: #fff; background: #238636; border-color: #2ea043; font-weight: 600; }
+    .quick-link.gh:hover { color: #fff; background: #2ea043; border-color: #3fb950; }
+    .quick-link.gh svg { opacity: 1; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: 6px;
+      padding: 4px 10px; background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 999px; font-size: 11.5px; color: var(--fg-subtle);
+    }
+    .chip b { color: var(--fg); font-family: var(--font-mono); font-weight: 600; }
+
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(96,165,250,0.20); border-top-color: var(--info);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* History */
+    .history {
+      margin-top: 28px; animation: fadeUp 0.5s ease-out 0.2s both;
+    }
+    .history-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+      font-size: 12px; color: var(--fg-muted); font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .history-header .count {
+      background: var(--surface-2); border: 1px solid var(--border);
+      padding: 1px 8px; border-radius: 999px; font-size: 11px; color: var(--fg-muted);
+      text-transform: none; letter-spacing: normal;
+    }
+    .history-header .clear-btn {
+      background: transparent; border: 0; color: var(--fg-subtle); font-size: 11px;
+      cursor: pointer; padding: 2px 6px; border-radius: 4px; font-family: inherit;
+      text-transform: none; letter-spacing: normal;
+    }
+    .history-header .clear-btn:hover { color: var(--err); }
+    .history-list { display: grid; gap: 6px; }
+    .hist-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-md); text-decoration: none; color: inherit;
+      transition: all 0.15s;
+    }
+    .hist-item:hover { border-color: var(--border-hover); background: var(--surface); transform: translateX(2px); }
+    .hist-badge {
+      flex-shrink: 0; padding: 2px 7px; font-size: 10.5px; font-weight: 700;
+      background: var(--surface-2); border-radius: 4px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .hist-name { flex: 1; font-size: 13px; color: var(--fg); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hist-time { font-size: 11px; color: var(--fg-subtle); flex-shrink: 0; }
+
+    /* Tip card */
+    .tip {
+      margin-top: 24px; padding: 14px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-md); font-size: 12.5px; color: var(--fg-muted);
+      display: flex; gap: 12px; align-items: flex-start;
+      animation: fadeUp 0.5s ease-out 0.25s both;
+    }
+    .tip .tip-icon {
+      flex-shrink: 0; display: grid; place-items: center;
+      width: 24px; height: 24px; border-radius: 6px;
+      background: rgba(251, 191, 36, 0.10); color: #fbbf24;
+    }
+    .tip .tip-icon svg { width: 13px; height: 13px; }
+    .tip b { color: var(--fg); font-weight: 600; }
+    .tip code {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(24px);
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--fg); color: var(--bg); padding: 10px 18px 10px 14px;
+      border-radius: 999px; font-size: 13px; font-weight: 500;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast svg { width: 14px; height: 14px; color: var(--ok); }
+
+    footer {
+      text-align: center; padding: 24px; font-size: 12px; color: var(--fg-subtle);
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+    footer a { color: var(--fg-muted); text-decoration: none; }
+    footer a:hover { color: var(--fg); }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 36px 16px 80px; }
+      h1 { font-size: 32px; }
+      textarea { min-height: 240px; }
+      .card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <div class="app">
+    <nav class="topnav">
+      <div class="topnav-brand">
+        <span class="logo">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        </span>
+        <span>Live Page Publisher</span>
+      </div>
+      <div class="topnav-actions">
+        <a class="icon-btn" id="repoLink" href="#" target="_blank" rel="noopener" title="Open repo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        </a>
+      </div>
+    </nav>
+
+    <div class="wrap">
+      <header>
+        <div class="kicker">
+          <span class="pulse-wrap"><span class="pulse"></span></span>
+          <span id="hostLabel">Live</span>
+        </div>
+        <h1>Paste a snippet.<br><span class="accent">Get a live URL.</span></h1>
+        <p>Drop in a "Get Code" snippet from Setup → Embedded Service Deployment. We'll commit, build, and serve it on GitHub Pages — usually in under 30 seconds.</p>
+      </header>
+
+      <div class="card-outer">
+        <form class="card" id="f">
+          <div class="kind-select" role="group" aria-label="Page type">
+            <span class="kind-select-label">Page type</span>
+            <div class="segmented" id="kindSeg">
+              <input type="radio" name="kind" id="kindEsw" value="esw" checked>
+              <label for="kindEsw" data-kind="esw"><span class="dot"></span>ESW</label>
+              <input type="radio" name="kind" id="kindMiaw" value="miaw">
+              <label for="kindMiaw" data-kind="miaw"><span class="dot"></span>MIAW/CWC Messaging</label>
+            </div>
+            <span class="kind-hint" id="kindHint">Expects <code>embedded_svc.init(...)</code></span>
+          </div>
+
+          <div class="field-header">
+            <div class="field-label">
+              <span class="num">1</span>
+              <span>Paste your snippet</span>
+            </div>
+            <div class="field-actions">
+              <button type="button" class="ghost-btn" id="pasteBtn" title="Paste from clipboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                Paste
+              </button>
+              <button type="button" class="ghost-btn" id="clearBtn" title="Clear the textarea">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="ta-wrap">
+            <textarea id="snippet" spellcheck="false" required autofocus></textarea>
+          </div>
+
+          <div class="card-footer">
+            <div class="footer-left">
+              <span>Submit with</span>
+              <kbd>⌘</kbd><span>+</span><kbd>↵</kbd>
+            </div>
+            <button type="submit" class="cta" id="go">
+              <span>Generate live URL</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <div id="status"></div>
+        </form>
+      </div>
+
+      <div class="history" id="history" hidden>
+        <div class="history-header">
+          <span>Recent generations <span class="count" id="histCount">0</span></span>
+          <button class="clear-btn" id="histClear">Clear history</button>
+        </div>
+        <div class="history-list" id="histList"></div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        </div>
+        <div>
+          <b>Getting a 401 or CORS error on the live page?</b> The org's Experience Site guest profile or the Embedded Service deployment's CORS origins don't include the GitHub Pages origin. Fix in Setup → CORS + the Site's Guest User profile.
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <a id="repoLinkFooter" href="#" target="_blank" rel="noopener">owner/repo</a>
+      <span id="footerNote"></span>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    <span id="toastMsg">Copied</span>
+  </div>
+
+  <script>
+    const $ = sel => document.querySelector(sel)
+    const form = $('#f'), snippet = $('#snippet'), status = $('#status'), go = $('#go')
+    const pasteBtn = $('#pasteBtn'), clearBtn = $('#clearBtn')
+    const toast = $('#toast'), toastMsg = $('#toastMsg')
+    const historyEl = $('#history'), histList = $('#histList'), histCount = $('#histCount'), histClear = $('#histClear')
+    const kindHint = $('#kindHint')
+
+    // Pull server-detected repo coords (owner/repo/host/branch) and wire links.
+    fetch('/config').then(r => r.ok ? r.json() : null).then(cfg => {
+      if (!cfg) return
+      const label = `${cfg.owner}/${cfg.repo}`
+      const repoLink = $('#repoLink'), repoLinkFooter = $('#repoLinkFooter')
+      const hostLabel = $('#hostLabel'), footerNote = $('#footerNote')
+      if (repoLink) repoLink.href = cfg.repoUrl
+      if (repoLinkFooter) { repoLinkFooter.href = cfg.repoUrl; repoLinkFooter.textContent = label }
+      if (hostLabel) hostLabel.textContent = cfg.login ? `Live · ${cfg.host} · /${cfg.login}/` : `Live · ${cfg.host}`
+      // GHES pages typically require network access to the internal host.
+      if (footerNote && cfg.host && cfg.host !== 'github.com') {
+        footerNote.textContent = ` · live URLs require access to ${cfg.host}`
+      }
+    }).catch(() => {})
+
+    const HIST_KEY = 'esw-tool.history.v1'
+    const MAX_HIST = 8
+    const KIND_KEY = 'esw-tool.lastKind.v1'
+
+    // NB: a literal end-script tag inside a string inside this script block
+    // would prematurely terminate this script. Assemble them from pieces.
+    const _S = '<' + 'script'
+    const _CS = '<' + '/script>'
+    const PLACEHOLDERS = {
+      esw: `<style type='text/css'>
+    .embeddedServiceHelpButton .helpButton .uiButton { background-color: #005290; }
+</style>
+${_S} src='https://service.force.com/embeddedservice/5.0/esw.min.js'>${_CS}
+${_S}>
+  var initESW = function(gslbBaseURL) {
+    embedded_svc.init(
+      'https://<org>.my.salesforce.com',
+      'https://<org>.my.site.com/ESWSite',
+      gslbBaseURL,
+      '00D...',
+      'ESWChat1',
+      { baseLiveAgentContentURL: 'https://c.la11-gcp-...' }
+    );
+  };
+${_CS}`,
+      miaw: `${_S} type='text/javascript'>
+  function initEmbeddedMessaging() {
+    try {
+      embeddedservice_bootstrap.settings.language = 'en_US';
+      embeddedservice_bootstrap.init(
+        '00D...',
+        'MIAWDeployment',
+        'https://<org>.my.site.com/ESWMIAWDeployment...',
+        { scrt2URL: 'https://<org>.my.salesforce-scrt.com' }
+      );
+    } catch (err) {
+      console.error('Error loading Embedded Messaging: ', err);
+    }
+  };
+${_CS}
+${_S} src='https://<org>.my.site.com/ESWMIAWDeployment.../assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'>${_CS}`,
+    }
+
+    const HINTS = {
+      esw: `Expects <code>embedded_svc.init(...)</code>`,
+      miaw: `Expects <code>embeddedservice_bootstrap.init(...)</code>`,
+    }
+
+    function getKind() {
+      const r = document.querySelector('input[name="kind"]:checked')
+      return r ? r.value : 'esw'
+    }
+    function applyKind(kind) {
+      snippet.placeholder = PLACEHOLDERS[kind]
+      kindHint.innerHTML = HINTS[kind]
+      localStorage.setItem(KIND_KEY, kind)
+    }
+    // Init from last-used
+    const savedKind = localStorage.getItem(KIND_KEY)
+    if (savedKind === 'miaw') { document.querySelector('#kindMiaw').checked = true }
+    applyKind(getKind())
+    // Each kind gets its own scratch slot so toggling back restores what was there.
+    const SNIPPET_KEY = kind => `esw-tool.snippet.${kind}.v1`
+    let lastKind = getKind()
+    // Restore whatever was last typed for the current kind on load.
+    const restored = localStorage.getItem(SNIPPET_KEY(lastKind))
+    if (restored != null) snippet.value = restored
+    // Persist while typing so a browser refresh doesn't drop the draft.
+    snippet.addEventListener('input', () => {
+      localStorage.setItem(SNIPPET_KEY(getKind()), snippet.value)
+    })
+    document.querySelectorAll('input[name="kind"]').forEach(r => {
+      r.addEventListener('change', () => {
+        // Stash the current textarea into the OUTGOING kind's slot before switching.
+        localStorage.setItem(SNIPPET_KEY(lastKind), snippet.value)
+        const nextKind = getKind()
+        applyKind(nextKind)
+        // Load the incoming kind's saved draft (empty string if none).
+        snippet.value = localStorage.getItem(SNIPPET_KEY(nextKind)) || ''
+        setStatus('', '')
+        snippet.focus()
+        lastKind = nextKind
+      })
+    })
+
+    snippet.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') form.requestSubmit()
+    })
+
+    // Auto-format on paste (⌘V / Ctrl-V into the textarea).
+    snippet.addEventListener('paste', e => {
+      const text = (e.clipboardData || window.clipboardData)?.getData('text')
+      if (!text) return
+      e.preventDefault()
+      const formatted = formatSnippet(text)
+      const el = snippet
+      const start = el.selectionStart, end = el.selectionEnd
+      el.value = el.value.slice(0, start) + formatted + el.value.slice(end)
+      const caret = start + formatted.length
+      el.setSelectionRange(caret, caret)
+    })
+
+    pasteBtn.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText()
+        if (text) { snippet.value = formatSnippet(text); snippet.focus() }
+      } catch { showToast('Clipboard blocked — paste with ⌘V') }
+    })
+
+    // Pretty-print a "Get Code" snippet. Best-effort: preserves comments, splits
+    // adjacent HTML tags onto their own lines, and re-indents JS by brace depth.
+    function formatSnippet(raw) {
+      const src = raw.replace(/\r\n?/g, '\n').trim()
+      if (!src) return ''
+      // Split into top-level HTML tokens: tags, comments, and text runs.
+      const tokens = []
+      let i = 0
+      while (i < src.length) {
+        if (src.startsWith('<!--', i)) {
+          const end = src.indexOf('-->', i + 4)
+          const j = end === -1 ? src.length : end + 3
+          tokens.push({ type: 'comment', text: src.slice(i, j) })
+          i = j
+        } else if (src[i] === '<') {
+          // Detect script/style blocks and swallow them as a single token (open + body + close).
+          const tagOpenEnd = src.indexOf('>', i)
+          if (tagOpenEnd === -1) { tokens.push({ type: 'text', text: src.slice(i) }); break }
+          const openTag = src.slice(i, tagOpenEnd + 1)
+          const nameMatch = openTag.match(/^<\s*(\w+)/)
+          const name = nameMatch ? nameMatch[1].toLowerCase() : ''
+          if ((name === 'script' || name === 'style') && !/\/\s*>$/.test(openTag)) {
+            const closeRe = new RegExp('</\\s*' + name + '\\s*>', 'i')
+            const rest = src.slice(tagOpenEnd + 1)
+            const cm = rest.match(closeRe)
+            if (cm) {
+              const bodyEnd = tagOpenEnd + 1 + cm.index
+              const closeEnd = bodyEnd + cm[0].length
+              tokens.push({
+                type: name,
+                open: openTag,
+                body: src.slice(tagOpenEnd + 1, bodyEnd),
+                close: src.slice(bodyEnd, closeEnd),
+              })
+              i = closeEnd
+              continue
+            }
+          }
+          tokens.push({ type: 'tag', text: openTag })
+          i = tagOpenEnd + 1
+        } else {
+          const next = src.indexOf('<', i)
+          const j = next === -1 ? src.length : next
+          const text = src.slice(i, j).trim()
+          if (text) tokens.push({ type: 'text', text })
+          i = j
+        }
+      }
+      const out = []
+      for (const t of tokens) {
+        if (t.type === 'comment' || t.type === 'tag' || t.type === 'text') {
+          out.push(t.text)
+        } else if (t.type === 'style') {
+          out.push(t.open + '\n' + indentBlock(t.body.trim(), 2) + '\n' + t.close)
+        } else if (t.type === 'script') {
+          const body = t.body.trim()
+          const pretty = body ? formatJs(body) : ''
+          out.push(t.open + (pretty ? '\n' + indentBlock(pretty, 2) + '\n' : '\n') + t.close)
+        }
+      }
+      return out.join('\n')
+    }
+
+    function indentBlock(text, n) {
+      const pad = ' '.repeat(n)
+      return text.split('\n').map(l => l.trim() ? pad + l : '').join('\n')
+    }
+
+    // Depth-based JS pretty-printer. Not a real parser — respects string / template /
+    // regex / comment boundaries so braces inside them don't shift indent.
+    function formatJs(src) {
+      const s = src
+      const out = []
+      let depth = 0
+      let line = ''
+      const push = () => { out.push('  '.repeat(Math.max(depth, 0)) + line.trim()); line = '' }
+      let i = 0
+      while (i < s.length) {
+        const c = s[i], next = s[i + 1]
+        // Line comment
+        if (c === '/' && next === '/') {
+          const nl = s.indexOf('\n', i)
+          const end = nl === -1 ? s.length : nl
+          line += s.slice(i, end); push(); i = end + 1; continue
+        }
+        // Block comment
+        if (c === '/' && next === '*') {
+          const end = s.indexOf('*/', i + 2)
+          const j = end === -1 ? s.length : end + 2
+          line += s.slice(i, j); i = j; continue
+        }
+        // Strings & templates — copy verbatim, honoring backslash escapes.
+        if (c === '"' || c === "'" || c === '`') {
+          const quote = c
+          let j = i + 1
+          while (j < s.length) {
+            const ch = s[j]
+            if (ch === '\\') { j += 2; continue }
+            if (quote === '`' && ch === '$' && s[j + 1] === '{') {
+              j += 2; let d = 1
+              while (j < s.length && d > 0) {
+                if (s[j] === '{') d++
+                else if (s[j] === '}') d--
+                if (d > 0) j++
+              }
+              j++; continue
+            }
+            if (ch === quote) { j++; break }
+            j++
+          }
+          line += s.slice(i, j); i = j; continue
+        }
+        // Newline in source: treat as a "commit line" boundary.
+        if (c === '\n') { if (line.trim()) push(); i++; continue }
+        // Braces / brackets / parens control depth.
+        if (c === '{' || c === '[' || c === '(') {
+          line += c
+          const isBlockBrace = c === '{'
+          if (isBlockBrace) {
+            push(); depth++
+          } else {
+            depth++
+          }
+          i++; continue
+        }
+        if (c === '}' || c === ']' || c === ')') {
+          if (c === '}') {
+            if (line.trim()) push()
+            depth = Math.max(0, depth - 1)
+            line += c
+            // eat optional trailing "," or ";" so it stays on same line
+            let k = i + 1
+            while (k < s.length && (s[k] === ',' || s[k] === ';')) { line += s[k]; k++ }
+            push(); i = k; continue
+          } else {
+            depth = Math.max(0, depth - 1)
+            line += c; i++; continue
+          }
+        }
+        // Statement terminator — flush.
+        if (c === ';') { line += c; push(); i++; continue }
+        line += c; i++
+      }
+      if (line.trim()) push()
+      return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\s*\n/, '')
+    }
+
+    clearBtn.addEventListener('click', () => {
+      snippet.value = ''
+      localStorage.removeItem(SNIPPET_KEY(getKind()))
+      snippet.focus(); setStatus('', '')
+    })
+
+    histClear.addEventListener('click', () => {
+      localStorage.removeItem(HIST_KEY); renderHistory()
+    })
+
+    function setStatus(kind, html) {
+      status.innerHTML = html ? `<div class="status ${kind}">${html}</div>` : ''
+    }
+
+    function showToast(msg) {
+      toastMsg.textContent = msg
+      toast.classList.add('show')
+      clearTimeout(showToast._t)
+      showToast._t = setTimeout(() => toast.classList.remove('show'), 2000)
+    }
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]') } catch { return [] }
+    }
+    function pushHistory(entry) {
+      const list = getHistory().filter(e => e.liveUrl !== entry.liveUrl)
+      list.unshift(entry)
+      localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, MAX_HIST)))
+      renderHistory()
+    }
+    function renderHistory() {
+      const list = getHistory()
+      if (!list.length) { historyEl.hidden = true; return }
+      historyEl.hidden = false
+      histCount.textContent = list.length
+      histList.innerHTML = list.map(e => `
+        <a class="hist-item" href="${e.liveUrl}" target="_blank" rel="noopener">
+          <span class="hist-badge">${escapeHtml((e.kind || 'esw').toUpperCase())}</span>
+          <span class="hist-badge">${escapeHtml(e.folder)}</span>
+          <span class="hist-name">${escapeHtml(e.instance)} · ${escapeHtml(e.deploymentName)}</span>
+          <span class="hist-time">${timeAgo(e.at)}</span>
+        </a>
+      `).join('')
+    }
+    function timeAgo(iso) {
+      const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
+      if (s < 60) return 'just now'
+      if (s < 3600) return `${Math.round(s/60)}m ago`
+      if (s < 86400) return `${Math.round(s/3600)}h ago`
+      return `${Math.round(s/86400)}d ago`
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault()
+      const body = { snippet: snippet.value, kind: getKind() }
+      go.disabled = true
+      setStatus('info', `
+        <div class="status-icon"><div class="spinner"></div></div>
+        <div class="status-body">
+          <div class="status-title">Working on it…</div>
+          <div class="sub">Parsing snippet, committing to <code>main</code>, waiting for GitHub Pages to publish (usually 5–30s).</div>
+        </div>
+      `)
+
+      let resp, data
+      try {
+        resp = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        data = await resp.json()
+      } catch (err) {
+        go.disabled = false
+        setStatus('err', `
+          <div class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+          <div class="status-body">
+            <div class="status-title">Network error</div>
+            <div class="sub">${escapeHtml(err.message || String(err))}</div>
+          </div>
+        `)
+        return
+      }
+
+      go.disabled = false
+
+      // 409 = a generate for this exact page (same org + deployment) is already in flight.
+      if (resp.status === 409 && data.error === 'locked') {
+        setStatus('err', `
+          <div class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="status-body">
+            <div class="status-title">This page is already being generated</div>
+            <div class="sub">A generate for this exact page (${escapeHtml((body.kind || 'esw').toUpperCase())} · same org + deployment) is already in flight. Wait a few seconds and try again.</div>
+          </div>
+        `)
+        return
+      }
+
+      if (!resp.ok) {
+        setStatus('err', `
+          <div class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="status-body">
+            <div class="status-title">Couldn't generate the page</div>
+            <div class="sub">${escapeHtml(data.error || 'Unknown error')}</div>
+          </div>
+        `)
+        return
+      }
+
+      const p = data.parsed
+      const pathChip = p.kind === 'miaw'
+        ? `<span class="chip">site <b>/${escapeHtml(p.sitePath)}</b></span>`
+        : `<span class="chip">site <b>/${escapeHtml(p.communityPath)}</b></span>`
+      const scrtChip = p.kind === 'miaw' && p.scrt2URL
+        ? `<span class="chip">scrt2 <b>${escapeHtml(p.scrt2URL.replace(/^https?:\/\//, ''))}</b></span>` : ''
+      const chips = `
+        <div class="chips">
+          <span class="chip">kind <b>${p.kind === 'miaw' ? 'MIAW' : 'ESW'}</b></span>
+          <span class="chip">org <b>${escapeHtml(p.instance)}</b></span>
+          <span class="chip">orgId <b>${escapeHtml(p.orgId)}</b></span>
+          <span class="chip">deployment <b>${escapeHtml(p.deploymentName)}</b></span>
+          ${pathChip}
+          <span class="chip">file <b>${escapeHtml(p.filename)}</b></span>
+          ${scrtChip}
+        </div>`
+
+      const noteExisted = data.existed ? ' · overwrote existing page' : ''
+
+      if (data.buildStatus === 'built') {
+        pushHistory({
+          liveUrl: data.liveUrl,
+          kind: p.kind,
+          folder: p.folder,
+          instance: p.instance,
+          deploymentName: p.deploymentName,
+          at: new Date().toISOString(),
+        })
+        setStatus('ok', `
+          <div class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="status-body">
+            <div class="status-title">Live${escapeHtml(noteExisted)}</div>
+            <div class="sub">Committed to your folder and Pages has rebuilt. Re-generating this org + deployment overwrites this same page.</div>
+            <div class="live-url">
+              <a href="${data.liveUrl}" target="_blank" rel="noopener">${escapeHtml(data.liveUrl)}</a>
+              <button type="button" class="copy-btn" data-copy="${escapeAttr(data.liveUrl)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+            <div class="quick-links">
+              ${data.fileUrl ? `<a class="quick-link gh" href="${data.fileUrl}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                View file on GitHub
+              </a>` : ''}
+              <a class="quick-link" href="${data.editUrl}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit in web editor
+              </a>
+            </div>
+            ${chips}
+          </div>
+        `)
+      } else {
+        setStatus('err', `
+          <div class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+          <div class="status-body">
+            <div class="status-title">Commit succeeded, but Pages build didn't finish</div>
+            <div class="sub">${escapeHtml(data.buildError || 'unknown')}</div>
+            <div class="live-url">
+              <a href="${data.liveUrl}" target="_blank" rel="noopener">${escapeHtml(data.liveUrl)}</a>
+              <button type="button" class="copy-btn" data-copy="${escapeAttr(data.liveUrl)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+            <div class="sub" style="margin-top:10px">Sometimes Pages catches up after another minute — try the URL anyway.</div>
+            ${data.fileUrl ? `<div class="quick-links">
+              <a class="quick-link gh" href="${data.fileUrl}" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                View file on GitHub
+              </a>
+            </div>` : ''}
+            ${chips}
+          </div>
+        `)
+      }
+    })
+
+    document.addEventListener('click', async e => {
+      const btn = e.target.closest('.copy-btn')
+      if (!btn) return
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy)
+        btn.classList.add('copied')
+        const label = btn.querySelector('span')
+        const orig = label.textContent
+        label.textContent = 'Copied'
+        showToast('URL copied to clipboard')
+        setTimeout(() => { label.textContent = orig; btn.classList.remove('copied') }, 1600)
+      } catch { showToast('Copy blocked — select and copy manually') }
+    })
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))
+    }
+    function escapeAttr(s) { return escapeHtml(s) }
+
+    renderHistory()
+  </script>
+</body>
+</html>
