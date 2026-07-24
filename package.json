@@ -1,0 +1,21 @@
+{
+  "name": "esw-page-tool",
+  "version": "1.0.0",
+  "description": "Turn a Salesforce embedded-service Get Code snippet into a live GitHub Pages URL. Runs locally; publishes to a folder named after your gh login.",
+  "type": "module",
+  "bin": {
+    "esw-page-tool": "_tool/server.mjs"
+  },
+  "files": [
+    "_tool/server.mjs",
+    "_tool/index.html",
+    "_tool/README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node _tool/server.mjs"
+  },
+  "license": "UNLICENSED"
+}
